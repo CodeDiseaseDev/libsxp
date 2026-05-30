@@ -33,7 +33,7 @@ target_compile_features(sxp
 )
 
 add_executable(sxp_test
-        main.cpp
+        main_big_sxp_test.cpp
 )
 
 target_link_libraries(sxp_test
