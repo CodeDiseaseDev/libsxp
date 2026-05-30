@@ -1,4 +1,4 @@
-#include "chunk/ChunkReader.h"
+#include "sxp/chunk/ChunkReader.h"
 
 namespace sxp {
   ChunkReader::ChunkReader(

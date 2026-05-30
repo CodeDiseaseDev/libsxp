@@ -1,20 +1,20 @@
-#include "project/ProjectFile.h"
+#include "sxp/project/ProjectFile.h"
 
 #include <cstring>
 
-#include "chunk/ChunkId.h"
-#include "file/FileReader.h"
-#include "file/FileWriter.h"
-#include "project/ProjectDocumentCodec.h"
-#include "stream/BinaryReader.h"
-#include "stream/BinaryWriter.h"
+#include "sxp/chunk/ChunkId.h"
+#include "sxp/file/FileReader.h"
+#include "sxp/file/FileWriter.h"
+#include "sxp/project/ProjectDocumentCodec.h"
+#include "sxp/stream/BinaryReader.h"
+#include "sxp/stream/BinaryWriter.h"
 
 #include <sstream>
 #include <span>
 #include <string>
 #include <vector>
 
-#include "sxp_format/SxpFormat.h"
+#include "sxp/sxp_format/SxpFormat.h"
 
 namespace {
   std::vector<std::uint8_t> ToBytes(

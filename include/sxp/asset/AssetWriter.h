@@ -5,11 +5,11 @@
 #ifndef LIBSXP_ASSETWRITER_H
 #define LIBSXP_ASSETWRITER_H
 
-#include "asset/AssetId.h"
-#include "asset/AssetKind.h"
-#include "asset/AssetManifest.h"
-#include "core/Result.h"
-#include "file/FileWriter.h"
+#include "sxp/asset/AssetId.h"
+#include "sxp/asset/AssetKind.h"
+#include "sxp/asset/AssetManifest.h"
+#include "sxp/core/Result.h"
+#include "sxp/file/FileWriter.h"
 
 #include <cstdint>
 #include <string>

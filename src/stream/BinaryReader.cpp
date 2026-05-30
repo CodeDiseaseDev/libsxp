@@ -1,4 +1,4 @@
-#include "stream/BinaryReader.h"
+#include "sxp/stream/BinaryReader.h"
 
 #include <cstring>
 

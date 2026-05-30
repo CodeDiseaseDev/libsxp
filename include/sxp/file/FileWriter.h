@@ -5,10 +5,10 @@
 #ifndef LIBSXP_FILEWRITER_H
 #define LIBSXP_FILEWRITER_H
 
-#include "chunk/ChunkId.h"
-#include "chunk/ChunkWriter.h"
-#include "core/Error.h"
-#include "sxp_format/Header.h"
+#include "sxp/chunk/ChunkId.h"
+#include "sxp/chunk/ChunkWriter.h"
+#include "sxp/core/Error.h"
+#include "sxp/sxp_format/Header.h"
 
 #include <cstdint>
 #include <fstream>

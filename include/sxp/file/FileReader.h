@@ -5,12 +5,12 @@
 #ifndef LIBSXP_FILEREADER_H
 #define LIBSXP_FILEREADER_H
 
-#include "chunk/ChunkEntry.h"
-#include "core/Error.h"
-#include "core/Result.h"
-#include "stream/ReadLimits.h"
-#include "sxp_format/Header.h"
-#include "sxp_format/TableOfContents.h"
+#include "sxp/chunk/ChunkEntry.h"
+#include "sxp/core/Error.h"
+#include "sxp/core/Result.h"
+#include "sxp/stream/ReadLimits.h"
+#include "sxp/sxp_format/Header.h"
+#include "sxp/sxp_format/TableOfContents.h"
 
 #include <cstdint>
 #include <fstream>

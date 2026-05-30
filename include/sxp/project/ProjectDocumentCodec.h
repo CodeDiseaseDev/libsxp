@@ -1,11 +1,11 @@
 #ifndef LIBSXP_PROJECTDOCUMENTCODEC_H
 #define LIBSXP_PROJECTDOCUMENTCODEC_H
 
-#include "core/Error.h"
-#include "core/Result.h"
-#include "project/ProjectDocument.h"
-#include "stream/BinaryReader.h"
-#include "stream/BinaryWriter.h"
+#include "sxp/core/Error.h"
+#include "sxp/core/Result.h"
+#include "sxp/project/ProjectDocument.h"
+#include "sxp/stream/BinaryReader.h"
+#include "sxp/stream/BinaryWriter.h"
 
 namespace sxp {
   class ProjectDocumentCodec {

@@ -1,12 +1,12 @@
-#include "file/FileReader.h"
+#include "sxp/file/FileReader.h"
 
-#include "chunk/ChunkId.h"
-#include "chunk/ChunkReader.h"
-#include "stream/BinaryReader.h"
+#include "sxp/chunk/ChunkId.h"
+#include "sxp/chunk/ChunkReader.h"
+#include "sxp/stream/BinaryReader.h"
 
 #include <cstring>
 #include <sstream>
-#include "sxp_format/SxpFormat.h"
+#include "sxp/sxp_format/SxpFormat.h"
 
 namespace sxp {
   static Result<TableOfContents> DeserializeTableOfContents(

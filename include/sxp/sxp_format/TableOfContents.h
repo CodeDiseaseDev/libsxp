@@ -6,7 +6,7 @@
 #define LIBSXP_TABLEOFCONTENTS_H
 #include <vector>
 
-#include "chunk/ChunkEntry.h"
+#include "sxp/chunk/ChunkEntry.h"
 
 namespace sxp {
   struct TableOfContents {

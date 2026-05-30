@@ -1,5 +1,5 @@
-#include <project/ProjectDocument.h>
-#include <project/ProjectFile.h>
+#include <sxp/project/ProjectDocument.h>
+#include <sxp/project/ProjectFile.h>
 
 #include <cmath>
 #include <cstdint>
@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "project/ProjectGenerator.h"
+#include "sxp/project/ProjectGenerator.h"
 
 namespace {
   constexpr double Epsilon = 0.000001;

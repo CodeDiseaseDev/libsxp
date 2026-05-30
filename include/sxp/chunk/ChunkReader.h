@@ -5,9 +5,9 @@
 #ifndef LIBSXP_CHUNKREADER_H
 #define LIBSXP_CHUNKREADER_H
 
-#include "chunk/ChunkHeader.h"
-#include "core/Result.h"
-#include "stream/BinaryReader.h"
+#include "sxp/chunk/ChunkHeader.h"
+#include "sxp/core/Result.h"
+#include "sxp/stream/BinaryReader.h"
 
 #include <cstdint>
 #include <istream>

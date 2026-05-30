@@ -1,8 +1,8 @@
-#include "asset/AssetWriter.h"
+#include "sxp/asset/AssetWriter.h"
 
-#include "chunk/ChunkId.h"
-#include "path/PathSanitizer.h"
-#include "stream/BinaryWriter.h"
+#include "sxp/chunk/ChunkId.h"
+#include "sxp/path/PathSanitizer.h"
+#include "sxp/stream/BinaryWriter.h"
 
 #include <fstream>
 #include <iterator>

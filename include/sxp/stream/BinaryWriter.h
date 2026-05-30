@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Error.h"
+#include "sxp/core/Error.h"
 
 #include <cstdint>
 #include <ostream>

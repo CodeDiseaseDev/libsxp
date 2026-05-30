@@ -1,12 +1,12 @@
-#include "project/ProjectDocumentCodec.h"
+#include "sxp/project/ProjectDocumentCodec.h"
 
-#include "project/ProjectArrangementClip.h"
-#include "project/ProjectHeaderCodec.h"
-#include "project/ProjectPattern.h"
-#include "project/ProjectPatternNote.h"
-#include "project/ProjectSectionHeader.h"
-#include "project/ProjectSectionId.h"
-#include "project/ProjectTrack.h"
+#include "sxp/project/ProjectArrangementClip.h"
+#include "sxp/project/ProjectHeaderCodec.h"
+#include "sxp/project/ProjectPattern.h"
+#include "sxp/project/ProjectPatternNote.h"
+#include "sxp/project/ProjectSectionHeader.h"
+#include "sxp/project/ProjectSectionId.h"
+#include "sxp/project/ProjectTrack.h"
 
 #include <cstdint>
 #include <functional>

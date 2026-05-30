@@ -5,9 +5,9 @@
 #ifndef LIBSXP_PROJECTFILE_H
 #define LIBSXP_PROJECTFILE_H
 #include "ProjectDocument.h"
-#include "core/Error.h"
-#include "core/Result.h"
-#include "stream/ReadLimits.h"
+#include "sxp/core/Error.h"
+#include "sxp/core/Result.h"
+#include "sxp/stream/ReadLimits.h"
 
 namespace sxp {
   class ProjectFile {

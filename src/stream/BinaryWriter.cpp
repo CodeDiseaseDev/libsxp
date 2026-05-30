@@ -1,4 +1,4 @@
-#include "stream/BinaryWriter.h"
+#include "sxp/stream/BinaryWriter.h"
 
 #include <cstring>
 #include <limits>

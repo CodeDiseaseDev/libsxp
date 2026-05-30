@@ -1,9 +1,9 @@
 #pragma once
 
-#include "chunk/ChunkEntry.h"
-#include "chunk/ChunkHeader.h"
-#include "core/Error.h"
-#include "stream/BinaryWriter.h"
+#include "sxp/chunk/ChunkEntry.h"
+#include "sxp/chunk/ChunkHeader.h"
+#include "sxp/core/Error.h"
+#include "sxp/stream/BinaryWriter.h"
 
 #include <cstdint>
 #include <ostream>

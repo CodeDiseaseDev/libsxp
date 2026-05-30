@@ -1,4 +1,4 @@
-#include "asset/AssetManifest.h"
+#include "sxp/asset/AssetManifest.h"
 
 namespace sxp {
   const EmbeddedAsset* AssetManifest::FindById(

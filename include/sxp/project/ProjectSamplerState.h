@@ -6,7 +6,7 @@
 #define LIBSXP_PROJECTSAMPLERSTATE_H
 #include <cstdint>
 
-#include "asset/AssetId.h"
+#include "sxp/asset/AssetId.h"
 
 namespace sxp {
   struct ProjectSamplerState {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/Error.h"
-#include "stream/ReadLimits.h"
+#include "sxp/core/Error.h"
+#include "sxp/stream/ReadLimits.h"
 
 #include <cstdint>
 #include <istream>

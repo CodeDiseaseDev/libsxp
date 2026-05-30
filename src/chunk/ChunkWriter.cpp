@@ -1,4 +1,4 @@
-#include "chunk/ChunkWriter.h"
+#include "sxp/chunk/ChunkWriter.h"
 
 namespace sxp {
   ChunkWriter::ChunkWriter(std::ostream& stream)

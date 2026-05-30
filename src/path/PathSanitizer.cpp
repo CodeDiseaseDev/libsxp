@@ -1,4 +1,4 @@
-#include "path/PathSanitizer.h"
+#include "sxp/path/PathSanitizer.h"
 
 #include <algorithm>
 #include <cctype>

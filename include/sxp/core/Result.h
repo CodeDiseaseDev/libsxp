@@ -5,7 +5,7 @@
 #ifndef LIBSXP_RESULT_H
 #define LIBSXP_RESULT_H
 
-#include "core/Error.h"
+#include "sxp/core/Error.h"
 
 namespace sxp {
   template<typename T>

@@ -5,10 +5,10 @@
 #ifndef LIBSXP_ASSETREADER_H
 #define LIBSXP_ASSETREADER_H
 
-#include "asset/AssetId.h"
-#include "asset/AssetManifest.h"
-#include "core/Result.h"
-#include "file/FileReader.h"
+#include "sxp/asset/AssetId.h"
+#include "sxp/asset/AssetManifest.h"
+#include "sxp/core/Result.h"
+#include "sxp/file/FileReader.h"
 
 #include <cstdint>
 #include <string>

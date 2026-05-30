@@ -1,4 +1,4 @@
-#include "sxp_format/TableOfContents.h"
+#include "sxp/sxp_format/TableOfContents.h"
 
 namespace sxp {
   const ChunkEntry* TableOfContents::FindFirst(

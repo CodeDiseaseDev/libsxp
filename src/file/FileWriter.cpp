@@ -1,13 +1,13 @@
-#include "file/FileWriter.h"
+#include "sxp/file/FileWriter.h"
 
 #include <cstring>
 
-#include "stream/BinaryWriter.h"
+#include "sxp/stream/BinaryWriter.h"
 
 #include <sstream>
 #include <vector>
 
-#include "sxp_format/SxpFormat.h"
+#include "sxp/sxp_format/SxpFormat.h"
 
 namespace {
   std::vector<std::uint8_t> ToBytes(const std::string& value) {

@@ -5,11 +5,11 @@
 #ifndef LIBSXP_PROJECTHEADERCODEC_H
 #define LIBSXP_PROJECTHEADERCODEC_H
 
-#include "core/Error.h"
-#include "core/Result.h"
-#include "project/ProjectHeader.h"
-#include "stream/BinaryReader.h"
-#include "stream/BinaryWriter.h"
+#include "sxp/core/Error.h"
+#include "sxp/core/Result.h"
+#include "sxp/project/ProjectHeader.h"
+#include "sxp/stream/BinaryReader.h"
+#include "sxp/stream/BinaryWriter.h"
 
 namespace sxp {
   class ProjectHeaderCodec {

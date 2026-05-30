@@ -1,7 +1,7 @@
-#include "asset/AssetReader.h"
+#include "sxp/asset/AssetReader.h"
 
-#include "chunk/ChunkId.h"
-#include "path/PathSanitizer.h"
+#include "sxp/chunk/ChunkId.h"
+#include "sxp/path/PathSanitizer.h"
 
 #include <fstream>
 
