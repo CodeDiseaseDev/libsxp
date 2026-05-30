@@ -27,6 +27,8 @@ public:
 
   Error WriteString(const std::string& value);
 
+  Error WriteI32(std::int32_t value);
+
 private:
   std::ostream& stream_;
 };

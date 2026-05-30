@@ -105,4 +105,17 @@ namespace sxp {
       )
     );
   }
+
+  Error BinaryWriter::WriteI32(std::int32_t value) {
+    const auto raw = std::bit_cast<std::uint32_t>(value);
+
+    std::uint8_t bytes[4] {
+      static_cast<std::uint8_t>(raw & 0xFF),
+      static_cast<std::uint8_t>((raw >> 8) & 0xFF),
+      static_cast<std::uint8_t>((raw >> 16) & 0xFF),
+      static_cast<std::uint8_t>((raw >> 24) & 0xFF)
+    };
+
+    return WriteBytes(bytes);
+  }
 }

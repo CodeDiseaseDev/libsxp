@@ -29,6 +29,8 @@ namespace sxp {
 
     Error ReadString(std::string& out);
 
+    Error ReadI32(int32_t& out);
+
   private:
     std::istream& stream_;
     ReadLimits limits_;

@@ -15,8 +15,8 @@
 #include <span>
 #include <string>
 #include <vector>
-#include "project/ProjectGenerator.h"
-#include "project/ProjectGeneratorType.h"
+#include "sxp/project/ProjectGenerator.h"
+#include "sxp/project/ProjectGeneratorType.h"
 
 namespace {
 constexpr std::uint64_t MaxProjectSectionItems = 1'000'000;
