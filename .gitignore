@@ -1,0 +1,17 @@
+cmake-build-*/
+build/
+out/
+
+.idea/
+.vscode/
+
+*.user
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+/full-house-beat.sxp
