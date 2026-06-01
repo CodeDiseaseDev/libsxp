@@ -21,6 +21,11 @@ namespace sxp {
       const std::string& path,
       ReadLimits limits = {}
     );
+    //
+    // static Result<ProjectDocument> Load(
+    //   const std::vector<std::uint8_t>& bytes,
+    //   ReadLimits limits = {}
+    // );
   };
 }
 

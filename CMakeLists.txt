@@ -20,6 +20,12 @@ file(GLOB_RECURSE LIBSXP_HEADERS CONFIGURE_DEPENDS
 add_library(sxp STATIC
         ${LIBSXP_SOURCES}
         ${LIBSXP_HEADERS}
+        include/sxp/project/ProjectAsset.h
+        include/sxp/project/generator_payload/OscillatorPayload.h
+        include/sxp/project/generator_payload/SamplerPayload.h
+        include/sxp/project/generator_payload/GeneratorPayloadCodec.h
+        src/project/generator_payload/GeneratorPayloadCodec.cpp
+        include/sxp/project/generator_payload/PayloadReaderContext.h
 )
 
 target_include_directories(sxp

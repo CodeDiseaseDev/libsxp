@@ -27,6 +27,54 @@ namespace {
   }
 }
 
+namespace {
+  sxp::Result<sxp::ProjectDocument> LoadProjectFromReader(
+    sxp::FileReader& fileReader,
+    sxp::ReadLimits limits
+  ) {
+    const sxp::ChunkEntry* projectChunk =
+      fileReader
+        .GetTableOfContents()
+        .FindFirst(sxp::Chunk_PROJ);
+
+    if (projectChunk == nullptr) {
+      return sxp::Result<sxp::ProjectDocument> {
+          {},
+          sxp::Fail(
+            sxp::ErrorCode::MissingRequiredChunk,
+            "SXP file is missing the PROJ chunk."
+          )
+        };
+    }
+
+    auto payloadResult =
+      fileReader.ReadChunkPayload(*projectChunk);
+
+    if (!payloadResult.Ok()) {
+      return sxp::Result<sxp::ProjectDocument> {
+          {},
+          payloadResult.error
+        };
+    }
+
+    const auto& payload = payloadResult.value;
+
+    std::string projectData(
+      reinterpret_cast<const char*>(payload.data()),
+      payload.size()
+    );
+
+    std::istringstream projectStream(
+      projectData,
+      std::ios::in | std::ios::binary
+    );
+
+    sxp::BinaryReader projectReader(projectStream, limits);
+
+    return sxp::ProjectDocumentCodec::Read(projectReader);
+  }
+}
+
 namespace sxp {
   sxp::Error sxp::ProjectFile::Save(
     const std::string& path,
@@ -76,6 +124,63 @@ namespace sxp {
     return fileWriter.Finalize();
   }
 
+  // sxp::Result<sxp::ProjectDocument> sxp::ProjectFile::Load(
+  //   const std::string& path,
+  //   ReadLimits limits
+  // ) {
+  //   FileReader fileReader;
+  //
+  //   auto err = fileReader.Open(path, limits);
+  //
+  //   if (!err.Ok()) {
+  //     return Result<ProjectDocument> {
+  //       {},
+  //       err
+  //     };
+  //   }
+  //
+  //   const ChunkEntry* projectChunk =
+  //     fileReader
+  //       .GetTableOfContents()
+  //       .FindFirst(Chunk_PROJ);
+  //
+  //   if (projectChunk == nullptr) {
+  //     return Result<ProjectDocument> {
+  //       {},
+  //       Fail(
+  //         ErrorCode::MissingRequiredChunk,
+  //         "SXP file is missing the PROJ chunk."
+  //       )
+  //     };
+  //   }
+  //
+  //   auto payloadResult =
+  //     fileReader.ReadChunkPayload(*projectChunk);
+  //
+  //   if (!payloadResult.Ok()) {
+  //     return Result<ProjectDocument> {
+  //       {},
+  //       payloadResult.error
+  //     };
+  //   }
+  //
+  //   const auto& payload = payloadResult.value;
+  //
+  //   std::string projectData(
+  //     reinterpret_cast<const char*>(payload.data()),
+  //     payload.size()
+  //   );
+  //
+  //   std::istringstream projectStream(
+  //     projectData,
+  //     std::ios::in | std::ios::binary
+  //   );
+  //
+  //   BinaryReader projectReader(projectStream, limits);
+  //
+  //   return ProjectDocumentCodec::Read(projectReader);
+  // }
+
   sxp::Result<sxp::ProjectDocument> sxp::ProjectFile::Load(
     const std::string& path,
     ReadLimits limits
@@ -91,45 +196,6 @@ namespace sxp {
       };
     }
 
-    const ChunkEntry* projectChunk =
-      fileReader
-        .GetTableOfContents()
-        .FindFirst(Chunk_PROJ);
-
-    if (projectChunk == nullptr) {
-      return Result<ProjectDocument> {
-        {},
-        Fail(
-          ErrorCode::MissingRequiredChunk,
-          "SXP file is missing the PROJ chunk."
-        )
-      };
-    }
-
-    auto payloadResult =
-      fileReader.ReadChunkPayload(*projectChunk);
-
-    if (!payloadResult.Ok()) {
-      return Result<ProjectDocument> {
-        {},
-        payloadResult.error
-      };
-    }
-
-    const auto& payload = payloadResult.value;
-
-    std::string projectData(
-      reinterpret_cast<const char*>(payload.data()),
-      payload.size()
-    );
-
-    std::istringstream projectStream(
-      projectData,
-      std::ios::in | std::ios::binary
-    );
-
-    BinaryReader projectReader(projectStream, limits);
-
-    return ProjectDocumentCodec::Read(projectReader);
+    return LoadProjectFromReader(fileReader, limits);
   }
 }

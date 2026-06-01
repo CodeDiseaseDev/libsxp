@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ProjectArrangementClip.h"
+#include "ProjectAsset.h"
 #include "ProjectGenerator.h"
 #include "ProjectHeader.h"
 #include "ProjectPattern.h"
@@ -15,6 +16,8 @@
 namespace sxp {
   struct ProjectDocument {
     ProjectHeader header;
+
+    std::vector<ProjectAsset> assets;
 
     std::vector<ProjectTrack> tracks;
     std::vector<ProjectPattern> patterns;

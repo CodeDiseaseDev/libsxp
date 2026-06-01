@@ -321,7 +321,7 @@ Error ProjectDocumentCodec::Write(
     return err;
   }
 
-  constexpr std::uint32_t sectionCount = 4;
+  constexpr std::uint32_t sectionCount = 5;
 
   err = writer.WriteU32(sectionCount);
   if (!err.Ok()) return err;
@@ -336,6 +336,9 @@ Error ProjectDocumentCodec::Write(
   if (!err.Ok()) return err;
 
   err = WriteGeneratorsSection(writer, project);
+  if (!err.Ok()) return err;
+
+  err = WriteAssetsSection(writer, project);
   if (!err.Ok()) return err;
 
   return Success();
@@ -416,6 +419,11 @@ Result<ProjectDocument> ProjectDocumentCodec::Read(
 
       case ProjectSectionId::Generators: {
         err = ReadGeneratorsSection(sectionReader, project);
+        break;
+      }
+
+      case ProjectSectionId::Assets: {
+        err = ReadAssetsSection(sectionReader, project);
         break;
       }
 
@@ -606,6 +614,69 @@ Error ProjectDocumentCodec::WriteArrangementSection(
   );
 }
 
+Error ProjectDocumentCodec::WriteAssetsSection(
+  BinaryWriter& writer,
+  const ProjectDocument& project
+) {
+  auto payloadResult = BuildSectionPayload(
+    [&project](BinaryWriter& sectionWriter) {
+      auto err = sectionWriter.WriteU64(
+        static_cast<std::uint64_t>(
+          project.assets.size()
+        )
+      );
+      if (!err.Ok()) return err;
+
+      for (const auto& asset : project.assets) {
+        err = sectionWriter.WriteU64(asset.id.high);
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteU64(asset.id.low);
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteU32(
+          static_cast<std::uint32_t>(asset.kind)
+        );
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteString(asset.displayName);
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteString(asset.originalPathHint);
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteString(asset.mimeType);
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteU64(
+          static_cast<std::uint64_t>(asset.data.size())
+        );
+        if (!err.Ok()) return err;
+
+        err = sectionWriter.WriteBytes(asset.data);
+        if (!err.Ok()) return err;
+      }
+
+      return Success();
+    }
+  );
+
+  if (!payloadResult.Ok()) {
+    return payloadResult.error;
+  }
+
+  return WriteSection(
+    writer,
+    ProjectSectionId::Assets,
+    1,
+    std::span<const std::uint8_t>(
+      payloadResult.value.data(),
+      payloadResult.value.size()
+    )
+  );
+}
+
+
 Error ProjectDocumentCodec::ReadTracksSection(
   BinaryReader& reader,
   ProjectDocument& project
@@ -774,4 +845,69 @@ Error ProjectDocumentCodec::ReadArrangementSection(
 
   return Success();
 }
+
+
+Error ProjectDocumentCodec::ReadAssetsSection(
+  BinaryReader& reader,
+  ProjectDocument& project
+) {
+  std::uint64_t count = 0;
+
+  auto err = reader.ReadU64(count);
+  if (!err.Ok()) return err;
+
+  err = CheckCount(count, "Asset");
+  if (!err.Ok()) return err;
+
+  project.assets.clear();
+  project.assets.reserve(static_cast<std::size_t>(count));
+
+  for (std::uint64_t i = 0; i < count; ++i) {
+    ProjectAsset asset {};
+    std::uint32_t kind = 0;
+    std::uint64_t dataSize = 0;
+
+    err = reader.ReadU64(asset.id.high);
+    if (!err.Ok()) return err;
+
+    err = reader.ReadU64(asset.id.low);
+    if (!err.Ok()) return err;
+
+    err = reader.ReadU32(kind);
+    if (!err.Ok()) return err;
+
+    asset.kind = static_cast<AssetKind>(kind);
+
+    err = reader.ReadString(asset.displayName);
+    if (!err.Ok()) return err;
+
+    err = reader.ReadString(asset.originalPathHint);
+    if (!err.Ok()) return err;
+
+    err = reader.ReadString(asset.mimeType);
+    if (!err.Ok()) return err;
+
+    err = reader.ReadU64(dataSize);
+    if (!err.Ok()) return err;
+
+    if (dataSize > static_cast<std::uint64_t>(
+      std::numeric_limits<std::size_t>::max()
+    )) {
+      return Fail(
+        ErrorCode::InvalidData,
+        "Asset data is too large"
+      );
+    }
+
+    asset.data.resize(static_cast<std::size_t>(dataSize));
+
+    err = reader.ReadBytes(asset.data);
+    if (!err.Ok()) return err;
+
+    project.assets.push_back(std::move(asset));
+  }
+
+  return Success();
+}
+
 }

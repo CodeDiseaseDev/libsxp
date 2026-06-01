@@ -6,39 +6,19 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
+#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
+#include "sxp/asset/AssetId.h"
 #include "sxp/project/ProjectGenerator.h"
+#include "sxp/project/generator_payload/GeneratorPayloadCodec.h"
+#include "sxp/project/generator_payload/OscillatorPayload.h"
+
 
 namespace {
   constexpr double Epsilon = 0.000001;
-
-  struct OscillatorPayloadV1 {
-    std::uint32_t waveShape = 0;
-    std::int32_t octave = 0;
-    std::int32_t semitone = 0;
-
-    float attackSeconds = 0.005f;
-    float decaySeconds = 0.25f;
-    float sustainLevel = 1.0f;
-    float releaseSeconds = 0.005f;
-
-    std::uint64_t mixerChannelId = 1;
-  };
-
-  struct SamplerPayloadV1 {
-    std::string samplePath;
-
-    std::int32_t rootNote = 60;
-    bool pitchFollow = true;
-    bool oneShot = true;
-
-    std::uint64_t mixerChannelId = 1;
-  };
 
   void Fail(const std::string& message) {
     std::cerr << "FAILED: " << message << "\n";
@@ -126,266 +106,101 @@ namespace {
     std::exit(1);
   }
 
-  void AppendU8(
-    std::vector<std::uint8_t>& bytes,
-    std::uint8_t value
-  ) {
-    bytes.push_back(value);
-  }
+  constexpr const char* CymaticsDrumPath =
+      "/home/code/Downloads/cymatics-phoenixrebirt/"
+      "Cymatics - Phoenix Rebirth/5 Drum One Shots - Electronic/";
 
-  void AppendBool(
-    std::vector<std::uint8_t>& bytes,
-    bool value
-  ) {
-    AppendU8(bytes, value ? 1 : 0);
-  }
-
-  void AppendU32(
-    std::vector<std::uint8_t>& bytes,
-    std::uint32_t value
-  ) {
-    bytes.push_back(static_cast<std::uint8_t>(value & 0xFF));
-    bytes.push_back(static_cast<std::uint8_t>((value >> 8) & 0xFF));
-    bytes.push_back(static_cast<std::uint8_t>((value >> 16) & 0xFF));
-    bytes.push_back(static_cast<std::uint8_t>((value >> 24) & 0xFF));
-  }
-
-  void AppendI32(
-    std::vector<std::uint8_t>& bytes,
-    std::int32_t value
-  ) {
-    AppendU32(bytes, static_cast<std::uint32_t>(value));
-  }
-
-  void AppendU64(
-    std::vector<std::uint8_t>& bytes,
-    std::uint64_t value
-  ) {
-    for (int i = 0; i < 8; ++i) {
-      bytes.push_back(
-        static_cast<std::uint8_t>((value >> (i * 8)) & 0xFF)
-      );
-    }
-  }
-
-  void AppendF32(
-    std::vector<std::uint8_t>& bytes,
-    float value
-  ) {
-    std::uint32_t raw = 0;
-    std::memcpy(&raw, &value, sizeof(raw));
-
-    AppendU32(bytes, raw);
-  }
-
-  void AppendString(
-    std::vector<std::uint8_t>& bytes,
-    const std::string& value
-  ) {
-    AppendU64(bytes, static_cast<std::uint64_t>(value.size()));
-
-    bytes.insert(
-      bytes.end(),
-      value.begin(),
-      value.end()
-    );
-  }
-
-  std::vector<std::uint8_t> EncodeOscillatorPayloadV1(
-    const OscillatorPayloadV1& payload
-  ) {
-    std::vector<std::uint8_t> bytes;
-
-    AppendU32(bytes, payload.waveShape);
-    AppendI32(bytes, payload.octave);
-    AppendI32(bytes, payload.semitone);
-
-    AppendF32(bytes, payload.attackSeconds);
-    AppendF32(bytes, payload.decaySeconds);
-    AppendF32(bytes, payload.sustainLevel);
-    AppendF32(bytes, payload.releaseSeconds);
-
-    AppendU64(bytes, payload.mixerChannelId);
-
-    return bytes;
-  }
-
-  std::vector<std::uint8_t> EncodeSamplerPayloadV1(
-    const SamplerPayloadV1& payload
-  ) {
-    std::vector<std::uint8_t> bytes;
-
-    AppendString(bytes, payload.samplePath);
-    AppendI32(bytes, payload.rootNote);
-    AppendBool(bytes, payload.pitchFollow);
-    AppendBool(bytes, payload.oneShot);
-    AppendU64(bytes, payload.mixerChannelId);
-
-    return bytes;
-  }
-
-  class PayloadReader {
-  public:
-    explicit PayloadReader(const std::vector<std::uint8_t>& bytes)
-      : bytes_(bytes) {
-    }
-
-    std::uint8_t ReadU8(const std::string& fieldName) {
-      RequireAvailable(1, fieldName);
-
-      return bytes_[position_++];
-    }
-
-    bool ReadBool(const std::string& fieldName) {
-      const auto value = ReadU8(fieldName);
-
-      if (value > 1) {
-        Fail("Invalid bool value in payload field: " + fieldName);
-      }
-
-      return value == 1;
-    }
-
-    std::uint32_t ReadU32(const std::string& fieldName) {
-      RequireAvailable(4, fieldName);
-
-      const std::uint32_t value =
-        static_cast<std::uint32_t>(bytes_[position_]) |
-        (static_cast<std::uint32_t>(bytes_[position_ + 1]) << 8) |
-        (static_cast<std::uint32_t>(bytes_[position_ + 2]) << 16) |
-        (static_cast<std::uint32_t>(bytes_[position_ + 3]) << 24);
-
-      position_ += 4;
-
-      return value;
-    }
-
-    std::int32_t ReadI32(const std::string& fieldName) {
-      const std::uint32_t raw = ReadU32(fieldName);
-
-      std::int32_t value = 0;
-      std::memcpy(&value, &raw, sizeof(value));
-
-      return value;
-    }
-
-    std::uint64_t ReadU64(const std::string& fieldName) {
-      RequireAvailable(8, fieldName);
-
-      std::uint64_t value = 0;
-
-      for (int i = 0; i < 8; ++i) {
-        value |=
-          static_cast<std::uint64_t>(bytes_[position_ + i]) << (i * 8);
-      }
-
-      position_ += 8;
-
-      return value;
-    }
-
-    float ReadF32(const std::string& fieldName) {
-      const std::uint32_t raw = ReadU32(fieldName);
-
-      float value = 0.0f;
-      std::memcpy(&value, &raw, sizeof(value));
-
-      return value;
-    }
-
-    std::string ReadString(const std::string& fieldName) {
-      const std::uint64_t size = ReadU64(fieldName + ".size");
-
-      if (size > static_cast<std::uint64_t>(bytes_.size() - position_)) {
-        Fail("Payload string is longer than remaining data: " + fieldName);
-      }
-
-      std::string value(
-        reinterpret_cast<const char*>(bytes_.data() + position_),
-        static_cast<std::size_t>(size)
-      );
-
-      position_ += static_cast<std::size_t>(size);
-
-      return value;
-    }
-
-    void RequireEnd(const std::string& payloadName) const {
-      if (position_ == bytes_.size()) {
-        return;
-      }
-
-      std::cerr
-        << "FAILED: " << payloadName << " payload had trailing bytes\n"
-        << "  position: " << position_ << "\n"
-        << "  size:     " << bytes_.size() << "\n";
-
-      std::exit(1);
-    }
-
-  private:
-    void RequireAvailable(
-      std::size_t count,
-      const std::string& fieldName
-    ) const {
-      if (position_ + count <= bytes_.size()) {
-        return;
-      }
-
-      std::cerr
-        << "FAILED: payload ended while reading " << fieldName << "\n"
-        << "  needed: " << count << " byte(s)\n"
-        << "  remaining: " << bytes_.size() - position_ << "\n";
-
-      std::exit(1);
-    }
-
-    const std::vector<std::uint8_t>& bytes_;
-    std::size_t position_ = 0;
+  struct TestAssetSource {
+    sxp::AssetId id;
+    std::string displayName;
+    std::string path;
+    std::string mimeType;
   };
 
-  OscillatorPayloadV1 DecodeOscillatorPayloadV1(
-    const std::vector<std::uint8_t>& bytes
+  sxp::AssetId MakeAssetId(
+    std::uint64_t high,
+    std::uint64_t low
   ) {
-    PayloadReader reader(bytes);
-
-    OscillatorPayloadV1 payload;
-    payload.waveShape = reader.ReadU32("waveShape");
-    payload.octave = reader.ReadI32("octave");
-    payload.semitone = reader.ReadI32("semitone");
-
-    payload.attackSeconds = reader.ReadF32("attackSeconds");
-    payload.decaySeconds = reader.ReadF32("decaySeconds");
-    payload.sustainLevel = reader.ReadF32("sustainLevel");
-    payload.releaseSeconds = reader.ReadF32("releaseSeconds");
-
-    payload.mixerChannelId = reader.ReadU64("mixerChannelId");
-
-    reader.RequireEnd("oscillator");
-
-    return payload;
+    sxp::AssetId id;
+    id.high = high;
+    id.low = low;
+    return id;
   }
 
-  SamplerPayloadV1 DecodeSamplerPayloadV1(
-    const std::vector<std::uint8_t>& bytes
+  std::string JoinSamplePath(const std::string& fileName) {
+    return std::string(CymaticsDrumPath) + fileName;
+  }
+
+  std::vector<std::uint8_t> ReadFileBytes(
+    const std::string& path
   ) {
-    PayloadReader reader(bytes);
+    std::ifstream file(
+      path,
+      std::ios::binary | std::ios::ate
+    );
 
-    SamplerPayloadV1 payload;
-    payload.samplePath = reader.ReadString("samplePath");
-    payload.rootNote = reader.ReadI32("rootNote");
-    payload.pitchFollow = reader.ReadBool("pitchFollow");
-    payload.oneShot = reader.ReadBool("oneShot");
-    payload.mixerChannelId = reader.ReadU64("mixerChannelId");
+    if (!file.is_open()) {
+      Fail("Could not open asset file: " + path);
+    }
 
-    reader.RequireEnd("sampler");
+    const auto size = file.tellg();
 
-    return payload;
+    if (size < 0) {
+      Fail("Could not get asset file size: " + path);
+    }
+
+    std::vector<std::uint8_t> bytes(
+      static_cast<std::size_t>(size)
+    );
+
+    file.seekg(0, std::ios::beg);
+
+    if (!bytes.empty()) {
+      file.read(
+        reinterpret_cast<char*>(bytes.data()),
+        static_cast<std::streamsize>(bytes.size())
+      );
+    }
+
+    if (!file.good() && !file.eof()) {
+      Fail("Could not read asset file: " + path);
+    }
+
+    return bytes;
+  }
+
+  std::vector<TestAssetSource> MakeTestAssetSources() {
+    return {
+      {
+        MakeAssetId(1, 1),
+        "Cymatics - Kick (Driven).wav",
+        JoinSamplePath("Cymatics - Kick (Driven).wav"),
+        "audio/wav"
+      },
+      {
+        MakeAssetId(1, 2),
+        "Cymatics - Hihat (Farther).wav",
+        JoinSamplePath("Cymatics - Hihat (Farther).wav"),
+        "audio/wav"
+      },
+      {
+        MakeAssetId(1, 3),
+        "Cymatics - Open Hihat (Feather).wav",
+        JoinSamplePath("Cymatics - Open Hihat (Feather).wav"),
+        "audio/wav"
+      },
+      {
+        MakeAssetId(1, 4),
+        "Cymatics - Clap (Process).wav",
+        JoinSamplePath("Cymatics - Clap (Process).wav"),
+        "audio/wav"
+      }
+    };
   }
 
   void CheckOscillatorPayloadEqual(
-    const OscillatorPayloadV1& actual,
-    const OscillatorPayloadV1& expected,
+    const sxp::ProjectOscillatorPayloadV1& actual,
+    const sxp::ProjectOscillatorPayloadV1& expected,
     const std::string& name
   ) {
     CheckEqual(actual.waveShape, expected.waveShape, name + " wave shape");
@@ -405,10 +220,22 @@ namespace {
   }
 
   void CheckSamplerPayloadEqual(
-    const SamplerPayloadV1& actual,
-    const SamplerPayloadV1& expected,
+    const sxp::ProjectSamplerPayloadV1& actual,
+    const sxp::ProjectSamplerPayloadV1& expected,
     const std::string& name
   ) {
+    CheckEqual(
+      actual.sampleAssetId.high,
+      expected.sampleAssetId.high,
+      name + " sample asset id high"
+    );
+
+    CheckEqual(
+      actual.sampleAssetId.low,
+      expected.sampleAssetId.low,
+      name + " sample asset id low"
+    );
+
     CheckEqual(actual.samplePath, expected.samplePath, name + " sample path");
     CheckEqual(actual.rootNote, expected.rootNote, name + " root note");
     CheckEqual(actual.pitchFollow, expected.pitchFollow, name + " pitch follow");
@@ -659,14 +486,21 @@ namespace {
   sxp::ProjectGenerator MakeOscillatorGenerator(
     std::uint64_t nodeId,
     std::string name,
-    const OscillatorPayloadV1& payload
+    const sxp::ProjectOscillatorPayloadV1& payload
   ) {
+    auto payloadResult =
+      sxp::ProjectGeneratorPayloadCodec::EncodeOscillatorV1(payload);
+
+    if (!payloadResult.Ok()) {
+      Require(payloadResult.error, "encode oscillator payload");
+    }
+
     sxp::ProjectGenerator generator;
     generator.nodeId = nodeId;
     generator.name = std::move(name);
     generator.type = sxp::ProjectGeneratorType::Oscillator;
     generator.version = 1;
-    generator.payload = EncodeOscillatorPayloadV1(payload);
+    generator.payload = std::move(payloadResult.value);
 
     return generator;
   }
@@ -674,14 +508,21 @@ namespace {
   sxp::ProjectGenerator MakeSamplerGenerator(
     std::uint64_t nodeId,
     std::string name,
-    const SamplerPayloadV1& payload
+    const sxp::ProjectSamplerPayloadV1& payload
   ) {
+    auto payloadResult =
+      sxp::ProjectGeneratorPayloadCodec::EncodeSamplerV1(payload);
+
+    if (!payloadResult.Ok()) {
+      Require(payloadResult.error, "encode sampler payload");
+    }
+
     sxp::ProjectGenerator generator;
     generator.nodeId = nodeId;
     generator.name = std::move(name);
     generator.type = sxp::ProjectGeneratorType::Sampler;
     generator.version = 1;
-    generator.payload = EncodeSamplerPayloadV1(payload);
+    generator.payload = std::move(payloadResult.value);
 
     return generator;
   }
@@ -708,6 +549,20 @@ namespace {
     project.arrangementClips.push_back(clip);
   }
 
+  void AddTestAssets(sxp::ProjectDocument& project) {
+    for (const auto& source : MakeTestAssetSources()) {
+      sxp::ProjectAsset asset;
+      asset.id = source.id;
+      asset.kind = sxp::AssetKind::AudioSample;
+      asset.displayName = source.displayName;
+      asset.originalPathHint = source.path;
+      asset.mimeType = source.mimeType;
+      asset.data = ReadFileBytes(source.path);
+
+      project.assets.push_back(std::move(asset));
+    }
+  }
+
   sxp::ProjectDocument CreateTestProject() {
     sxp::ProjectDocument project;
 
@@ -718,10 +573,17 @@ namespace {
     project.header.swingAmount = 0.18;
     project.header.swingSubdivisionBeats = 0.25;
 
+    const auto assetSources = MakeTestAssetSources();
+
+    const auto kickAsset = assetSources[0];
+    const auto closedHatAsset = assetSources[1];
+    const auto openHatAsset = assetSources[2];
+    const auto clapAsset = assetSources[3];
+
     project.generators.push_back(MakeOscillatorGenerator(
       10,
       "Sub Sine",
-      OscillatorPayloadV1 {
+      sxp::ProjectOscillatorPayloadV1 {
         .waveShape = 0,
         .octave = -1,
         .semitone = 0,
@@ -736,7 +598,7 @@ namespace {
     project.generators.push_back(MakeOscillatorGenerator(
       11,
       "Reese Saw",
-      OscillatorPayloadV1 {
+      sxp::ProjectOscillatorPayloadV1 {
         .waveShape = 2,
         .octave = 0,
         .semitone = -5,
@@ -751,7 +613,7 @@ namespace {
     project.generators.push_back(MakeOscillatorGenerator(
       12,
       "Lead Square",
-      OscillatorPayloadV1 {
+      sxp::ProjectOscillatorPayloadV1 {
         .waveShape = 1,
         .octave = 1,
         .semitone = 0,
@@ -766,7 +628,7 @@ namespace {
     project.generators.push_back(MakeOscillatorGenerator(
       13,
       "Glass Pluck",
-      OscillatorPayloadV1 {
+      sxp::ProjectOscillatorPayloadV1 {
         .waveShape = 3,
         .octave = 2,
         .semitone = 7,
@@ -781,8 +643,9 @@ namespace {
     project.generators.push_back(MakeSamplerGenerator(
       20,
       "Kick Sampler",
-      SamplerPayloadV1 {
-        .samplePath = "samples/drums/kick_punchy_01.wav",
+      sxp::ProjectSamplerPayloadV1 {
+        .sampleAssetId = kickAsset.id,
+        .samplePath = kickAsset.path,
         .rootNote = 36,
         .pitchFollow = false,
         .oneShot = true,
@@ -792,9 +655,10 @@ namespace {
 
     project.generators.push_back(MakeSamplerGenerator(
       21,
-      "Snare Sampler",
-      SamplerPayloadV1 {
-        .samplePath = "samples/drums/snare_snap_03.wav",
+      "Clap Sampler",
+      sxp::ProjectSamplerPayloadV1 {
+        .sampleAssetId = clapAsset.id,
+        .samplePath = clapAsset.path,
         .rootNote = 38,
         .pitchFollow = false,
         .oneShot = true,
@@ -804,10 +668,24 @@ namespace {
 
     project.generators.push_back(MakeSamplerGenerator(
       22,
-      "Hat Sampler",
-      SamplerPayloadV1 {
-        .samplePath = "samples/drums/closed_hat_tight.wav",
+      "Closed Hat Sampler",
+      sxp::ProjectSamplerPayloadV1 {
+        .sampleAssetId = closedHatAsset.id,
+        .samplePath = closedHatAsset.path,
         .rootNote = 42,
+        .pitchFollow = false,
+        .oneShot = true,
+        .mixerChannelId = 3
+      }
+    ));
+
+    project.generators.push_back(MakeSamplerGenerator(
+      23,
+      "Open Hat Sampler",
+      sxp::ProjectSamplerPayloadV1 {
+        .sampleAssetId = openHatAsset.id,
+        .samplePath = openHatAsset.path,
+        .rootNote = 46,
         .pitchFollow = false,
         .oneShot = true,
         .mixerChannelId = 3
@@ -823,7 +701,7 @@ namespace {
     sxp::ProjectTrack drumTrack;
     drumTrack.id = 2;
     drumTrack.name = "Drum Rack";
-    drumTrack.generatorNodeIds = { 20, 21, 22 };
+    drumTrack.generatorNodeIds = { 20, 21, 22, 23 };
     project.tracks.push_back(drumTrack);
 
     sxp::ProjectTrack leadTrack;
@@ -963,15 +841,51 @@ namespace {
       );
 
       if (actualGenerator.type == sxp::ProjectGeneratorType::Oscillator) {
+        auto actualPayloadResult =
+          sxp::ProjectGeneratorPayloadCodec::DecodeOscillatorV1(
+            actualGenerator.payload
+          );
+
+        if (!actualPayloadResult.Ok()) {
+          Require(actualPayloadResult.error, prefix + " decode actual oscillator payload");
+        }
+
+        auto expectedPayloadResult =
+          sxp::ProjectGeneratorPayloadCodec::DecodeOscillatorV1(
+            expectedGenerator.payload
+          );
+
+        if (!expectedPayloadResult.Ok()) {
+          Require(expectedPayloadResult.error, prefix + " decode expected oscillator payload");
+        }
+
         CheckOscillatorPayloadEqual(
-          DecodeOscillatorPayloadV1(actualGenerator.payload),
-          DecodeOscillatorPayloadV1(expectedGenerator.payload),
+          actualPayloadResult.value,
+          expectedPayloadResult.value,
           prefix + " decoded oscillator payload"
         );
       } else if (actualGenerator.type == sxp::ProjectGeneratorType::Sampler) {
+        auto actualPayloadResult =
+          sxp::ProjectGeneratorPayloadCodec::DecodeSamplerV1(
+            actualGenerator.payload
+          );
+
+        if (!actualPayloadResult.Ok()) {
+          Require(actualPayloadResult.error, prefix + " decode actual sampler payload");
+        }
+
+        auto expectedPayloadResult =
+          sxp::ProjectGeneratorPayloadCodec::DecodeSamplerV1(
+            expectedGenerator.payload
+          );
+
+        if (!expectedPayloadResult.Ok()) {
+          Require(expectedPayloadResult.error, prefix + " decode expected sampler payload");
+        }
+
         CheckSamplerPayloadEqual(
-          DecodeSamplerPayloadV1(actualGenerator.payload),
-          DecodeSamplerPayloadV1(expectedGenerator.payload),
+          actualPayloadResult.value,
+          expectedPayloadResult.value,
           prefix + " decoded sampler payload"
         );
       }
@@ -1101,6 +1015,36 @@ namespace {
     }
   }
 
+  void ValidateAssets(
+    const sxp::ProjectDocument& actual,
+    const sxp::ProjectDocument& expected
+  ) {
+    CheckEqual(actual.assets.size(), expected.assets.size(), "asset count");
+
+    for (std::size_t i = 0; i < expected.assets.size(); ++i) {
+      const auto& actualAsset = actual.assets[i];
+      const auto& expectedAsset = expected.assets[i];
+
+      const std::string prefix =
+        "asset " + std::to_string(i);
+
+      CheckEqual(actualAsset.id.high, expectedAsset.id.high, prefix + " id high");
+      CheckEqual(actualAsset.id.low, expectedAsset.id.low, prefix + " id low");
+
+      CheckEqual(
+        static_cast<std::uint32_t>(actualAsset.kind),
+        static_cast<std::uint32_t>(expectedAsset.kind),
+        prefix + " kind"
+      );
+
+      CheckEqual(actualAsset.displayName, expectedAsset.displayName, prefix + " name");
+      CheckEqual(actualAsset.originalPathHint, expectedAsset.originalPathHint, prefix + " path");
+      CheckEqual(actualAsset.mimeType, expectedAsset.mimeType, prefix + " mime");
+
+      CheckBytesEqual(actualAsset.data, expectedAsset.data, prefix + " data");
+    }
+  }
+
   void ValidateLoadedProject(
     const sxp::ProjectDocument& actual,
     const sxp::ProjectDocument& expected
@@ -1110,13 +1054,54 @@ namespace {
     ValidateTracks(actual, expected);
     ValidatePatterns(actual, expected);
     ValidateArrangementClips(actual, expected);
+    ValidateAssets(actual, expected);
   }
 }
 
+std::uint64_t CountAssetBytes(const sxp::ProjectDocument& project) {
+  std::uint64_t count = 0;
+
+  for (const auto& asset : project.assets) {
+    count += static_cast<std::uint64_t>(asset.data.size());
+  }
+
+  return count;
+}
+
+double GetProjectEndBeat(const sxp::ProjectDocument& project) {
+  double endBeat = 0.0;
+
+  for (const auto& clip : project.arrangementClips) {
+    endBeat = std::max(
+      endBeat,
+      clip.startBeat + clip.lengthBeats
+    );
+  }
+
+  return endBeat;
+}
+
+std::size_t CountGeneratorsOfType(
+  const sxp::ProjectDocument& project,
+  sxp::ProjectGeneratorType type
+) {
+  std::size_t count = 0;
+
+  for (const auto& generator : project.generators) {
+    if (generator.type == type) {
+      ++count;
+    }
+  }
+
+  return count;
+}
+
 int main() {
-  const std::string path = "big-synthem-stress-project.sxp";
+  const std::string path = "/home/code/big-synthem-stress-project.sxp";
 
   sxp::ProjectDocument project = CreateTestProject();
+
+  AddTestAssets(project);
 
   Require(
     sxp::ProjectFile::Save(path, project),
@@ -1131,6 +1116,9 @@ int main() {
 
   ValidateLoadedProject(result.value, project);
 
+  const auto assetBytes = CountAssetBytes(result.value);
+  const auto projectEndBeat = GetProjectEndBeat(result.value);
+
   std::cout
     << "SXP project passed: "
     << path
@@ -1144,6 +1132,27 @@ int main() {
   std::cout
     << "  bpm: "
     << result.value.header.bpm
+    << "\n";
+
+  std::cout
+    << "  time signature: "
+    << result.value.header.timeSigNumerator
+    << "/"
+    << result.value.header.timeSigDenominator
+    << "\n";
+
+  std::cout
+    << "  swing: "
+    << result.value.header.swingAmount
+    << " @ "
+    << result.value.header.swingSubdivisionBeats
+    << " beats"
+    << "\n";
+
+  std::cout
+    << "  project length: "
+    << projectEndBeat
+    << " beats"
     << "\n";
 
   std::cout
@@ -1170,6 +1179,48 @@ int main() {
     << "  generators: "
     << result.value.generators.size()
     << "\n";
+
+  std::cout
+    << "    oscillators: "
+    << CountGeneratorsOfType(
+         result.value,
+         sxp::ProjectGeneratorType::Oscillator
+       )
+    << "\n";
+
+  std::cout
+    << "    samplers: "
+    << CountGeneratorsOfType(
+         result.value,
+         sxp::ProjectGeneratorType::Sampler
+       )
+    << "\n";
+
+  std::cout
+    << "  assets: "
+    << result.value.assets.size()
+    << "\n";
+
+  std::cout
+    << "  embedded asset bytes: "
+    << assetBytes
+    << "\n";
+
+  for (const auto& asset : result.value.assets) {
+    std::cout
+      << "    asset "
+      << asset.id.high
+      << ":"
+      << asset.id.low
+      << " | "
+      << asset.displayName
+      << " | "
+      << asset.mimeType
+      << " | "
+      << asset.data.size()
+      << " bytes"
+      << "\n";
+  }
 
   return 0;
 }

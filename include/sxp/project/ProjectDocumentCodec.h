@@ -40,6 +40,11 @@ namespace sxp {
       const ProjectDocument& project
     );
 
+    static Error WriteAssetsSection(
+      BinaryWriter& writer,
+      const ProjectDocument& project
+    );
+
     static Error ReadTracksSection(
       BinaryReader& reader,
       ProjectDocument& project
@@ -56,6 +61,11 @@ namespace sxp {
     );
 
     static Error ReadGeneratorsSection(
+      BinaryReader& reader,
+      ProjectDocument& project
+    );
+
+    static Error ReadAssetsSection(
       BinaryReader& reader,
       ProjectDocument& project
     );

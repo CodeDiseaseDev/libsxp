@@ -181,7 +181,7 @@ namespace sxp {
       (static_cast<std::uint32_t>(bytes[2]) << 16) |
       (static_cast<std::uint32_t>(bytes[3]) << 24);
 
-    out = std::bit_cast<std::int32_t>(raw);
+    out = static_cast<std::uint32_t>(raw);
 
     return Success();
   }
