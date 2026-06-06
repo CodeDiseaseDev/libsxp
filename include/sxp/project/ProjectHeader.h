@@ -9,19 +9,17 @@
 
 namespace sxp {
   struct ProjectHeader {
-    // std::uint32_t projectFormatVersion = 1;
-
-    std::uint64_t projectIdHigh;
-    std::uint64_t projectIdLow;
+    std::uint64_t projectIdHigh = 0;
+    std::uint64_t projectIdLow = 0;
 
     std::string projectName;
-    double bpm;
+    double bpm = 0;
 
-    std::uint32_t timeSigNumerator;
-    std::uint32_t timeSigDenominator;
+    std::uint32_t timeSigNumerator = 0;
+    std::uint32_t timeSigDenominator = 0;
 
-    double swingAmount;
-    double swingSubdivisionBeats;
+    double swingAmount = 0;
+    double swingSubdivisionBeats = 0;
   };
 }
 
